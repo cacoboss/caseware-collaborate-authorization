@@ -22,3 +22,6 @@ Thumbs.db
 
 # Working notes, kept locally but never tracked
 docs/design-docs/AI Usage Log - full working record.md
+
+# Word lock files
+~\$*
