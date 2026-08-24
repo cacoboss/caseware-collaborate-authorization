@@ -43,9 +43,18 @@ builder.Services.AddAuthorization();
 builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
-// Registered by concrete type as well, so tests can make either one fail.
-builder.Services.AddSingleton<InMemoryPrivilegeStore>();
-builder.Services.AddSingleton<IPrivilegeStore>(sp => sp.GetRequiredService<InMemoryPrivilegeStore>());
+// PostgreSQL when configured, in-memory otherwise. The in-memory one is also registered
+// by its concrete type so tests can make it fail.
+var databaseConnection = builder.Configuration["Database:ConnectionString"];
+if (string.IsNullOrWhiteSpace(databaseConnection))
+{
+    builder.Services.AddSingleton<InMemoryPrivilegeStore>();
+    builder.Services.AddSingleton<IPrivilegeStore>(sp => sp.GetRequiredService<InMemoryPrivilegeStore>());
+}
+else
+{
+    builder.Services.AddSingleton<IPrivilegeStore>(_ => new PostgresPrivilegeStore(databaseConnection));
+}
 
 // Redis when configured, in-memory otherwise. Nothing above the interface changes.
 var redisConnection = builder.Configuration["Redis:ConnectionString"];

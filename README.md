@@ -70,10 +70,11 @@ src/Collaborate.Authorization       the resolver and the read path — no ASP.NE
 
 src/Collaborate.Authorization.Api   minimal API, JWT bearer, decision log
   Endpoints/ · Authentication/ · Observability/ · Infrastructure/
-                                    Infrastructure holds both cache implementations:
-                                    in-memory by default, Redis when configured
+                                    Infrastructure holds both implementations of each
+                                    dependency plus the schema: in-memory by default,
+                                    PostgreSQL and Redis when configured
 
-tests/                              31 tests
+tests/                              37 tests
 ```
 
 The namespace graph is acyclic — `Model` depends on nothing, `Resolution` and `ReadPath`
@@ -95,10 +96,10 @@ Run the tests:
 dotnet run --project tests/Collaborate.Authorization.Tests
 ```
 
-**Four of the 31 tests need Docker.** They start a Redis container to prove the cache
-implementation round-trips a privilege tree through a real server. Without Docker running
-those four fail; the other 27 do not need it and cover every behaviour of the read path
-using fakes.
+**Ten of the 37 tests need Docker.** They start PostgreSQL and Redis containers to prove
+that the privilege tree is a projection of a real schema and that it survives a round trip
+through a real cache. Without Docker running those ten fail; the other 27 do not need it and
+cover every behaviour of the read path using fakes.
 
 `dotnet test` does not work here. TUnit runs on Microsoft.Testing.Platform, and the .NET 10
 SDK still routes `dotnet test` through the VSTest bridge, which that platform no longer
@@ -111,8 +112,9 @@ Run the service:
 dotnet run --project src/Collaborate.Authorization.Api
 ```
 
-It uses the in-memory cache unless `Redis:ConnectionString` is configured, in which case it
-uses Redis. Nothing above the `IPrivilegeCache` interface changes either way.
+It uses in-memory stand-ins unless `Database:ConnectionString` or `Redis:ConnectionString`
+are configured, in which case it uses PostgreSQL and Redis. Nothing above the
+`IPrivilegeStore` and `IPrivilegeCache` interfaces changes either way.
 
 Both endpoints require a bearer token and answer for that token's subject. Every response
 carries the rule that decided it:

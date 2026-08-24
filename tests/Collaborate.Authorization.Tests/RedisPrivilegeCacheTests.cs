@@ -26,7 +26,7 @@ public class RedisPrivilegeCacheTests
             Overrides: [new ResourceOverride(Document.Id, PermissionAction.Edit, Allow: true)],
             Resources: [Document]);
 
-    private static async Task<(RedisContainer Container, RedisPrivilegeCache Cache)> StartRedis()
+    internal static async Task<(RedisContainer Container, RedisPrivilegeCache Cache)> StartRedis()
     {
         var container = new RedisBuilder().WithImage("redis:7-alpine").Build();
         await container.StartAsync();
