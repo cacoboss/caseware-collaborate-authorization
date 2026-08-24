@@ -3,7 +3,6 @@ using Collaborate.Authorization.Model;
 using Collaborate.Authorization.ReadPath;
 using Collaborate.Authorization.Resolution;
 using Collaborate.Authorization.Service;
-using DotNet.Testcontainers.Configurations;
 using StackExchange.Redis;
 using Testcontainers.Redis;
 
@@ -17,14 +16,6 @@ namespace Collaborate.Authorization.Tests;
 /// </summary>
 public class RedisPrivilegeCacheTests
 {
-    static RedisPrivilegeCacheTests()
-    {
-        // Ryuk, the reaper Testcontainers starts to clean up after a run, does not come up
-        // on this Docker Desktop setup. Every container here is disposed explicitly, so the
-        // reaper has nothing to do.
-        TestcontainersSettings.ResourceReaperEnabled = false;
-    }
-
     private const string Subject = "user-1";
     private const string Workspace = "ws-1";
     private static readonly Resource Document = new("doc-1", "document");

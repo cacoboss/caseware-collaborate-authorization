@@ -85,6 +85,7 @@ Each is declared in the design document. None is invented here.
 | A stale tree is served after invalidation | S5 | Evict, call again, assert the answer was recomputed |
 | **The point query and the enumeration disagree** | §1 use case 7 | For every resource in an enumeration, the point query returns the same decision and rule |
 | A decision arrives without an explanation | Key Decision 5 | `deciding_rule` present on every entry; `no_grant` where nothing granted |
+| **A rule changes meaning on its way through the cache** | The cache holds the resolved tree, so a serialization fault would change an answer without failing | Round trip through a real Redis in a container: a tree carrying a deny comes back carrying that same deny |
 
 The second is the one that matters most. Revoking a permission in the store and getting a
 deny **on the same, still-valid token** is the whole design demonstrated in one test: it is
@@ -112,7 +113,7 @@ what "revocation within seconds without forcing re-authentication" means in prac
 | Response shape | Enumeration **and** point query over one resolver | The design implies both: the PEP asks a point question per request, a consuming service wants the set. Two shapes, one resolution path — breadth in the contract, not in the logic |
 | `act` claim | Consumed, not minted | Backs the confused-deputy row with code. Reading a claim and refusing to authorize on it is not RFC 8693 mechanics |
 | Token | Real JWT, validated by the framework with a symmetric test key | The brief asks whether the right tool was reached for; token validation is exactly what the framework already solves |
-| Store | Two in-memory implementations behind separate `IPrivilegeStore` and `IPrivilegeCache` interfaces, each able to be told to fail | A single store cannot distinguish cache from source of truth; two can. Real containers prove wiring, fakes prove behaviour, and all six degradation cells are behaviour. Turning a real Redis off mid-test is fiddly; a flag is not. A Redis-backed cache is a wiring test to add if time allows |
+| Store | Fakes for behaviour, a real Redis through TestContainers for wiring | A single store cannot distinguish cache from source of truth; two can. Failure cases belong with the fakes — turning a real Redis off mid-test is fiddly and a flag is not — so all six degradation cells are asserted there. The container proves the one thing a fake cannot: that a tree survives a round trip through a real client and server |
 | Empty result | `no_grant` | A denial with no grant behind it is still a decision, and explainability has to cover it |
 
 ---
