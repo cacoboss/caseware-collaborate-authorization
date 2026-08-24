@@ -2,13 +2,6 @@ using Collaborate.Authorization.Model;
 
 namespace Collaborate.Authorization.Resolution;
 
-/// <summary>
-/// Resolves one authorization question across the three permission planes.
-///
-/// Denials are evaluated before grants, so an explicit deny can never be masked by an
-/// inherited allow. Grants are then evaluated most specific first, so the rule reported
-/// is the one closest to the resource.
-/// </summary>
 public sealed class PermissionResolver : IPermissionResolver
 {
     public Decision Resolve(PrivilegeTree tree, Resource resource, PermissionAction action)
@@ -16,45 +9,41 @@ public sealed class PermissionResolver : IPermissionResolver
         var firmPolicy = FirmPolicyFor(tree, resource, action);
         var resourceOverride = OverrideFor(tree, resource, action);
 
-        // Denials first, firm policy ahead of the resource override. A firm-level
-        // prohibition cannot be lifted by a workspace administrator, so when both deny it
-        // is the more authoritative explanation for an audit trail.
-        if (firmPolicy is false) return Decision.Deny(DecidingRule.FirmPolicy);
-        if (resourceOverride is false) return Decision.Deny(DecidingRule.ResourceOverride);
+        // Denies before grants, so an explicit deny is never masked by an inherited allow.
+        // Firm policy first: a workspace admin cannot lift it, so it explains the denial better.
+        if (firmPolicy is RuleOutcome.Deny) return Decision.Deny(DecidingRule.FirmPolicy);
+        if (resourceOverride is RuleOutcome.Deny) return Decision.Deny(DecidingRule.ResourceOverride);
 
         // Grants, most specific first.
-        if (resourceOverride is true) return Decision.Allow(DecidingRule.ResourceOverride);
+        if (resourceOverride is RuleOutcome.Allow) return Decision.Allow(DecidingRule.ResourceOverride);
         if (tree.Role is { } role && RoleGrants.Grants(role, action))
             return Decision.Allow(DecidingRule.WorkspaceRole);
-        if (firmPolicy is true) return Decision.Allow(DecidingRule.FirmPolicy);
+        if (firmPolicy is RuleOutcome.Allow) return Decision.Allow(DecidingRule.FirmPolicy);
 
-        // Nothing granted it. That is still a decision, and it says so.
         return Decision.Deny(DecidingRule.NoGrant);
     }
 
-    /// <summary>Returns null when no rule on this plane speaks to the question.</summary>
-    private static bool? FirmPolicyFor(PrivilegeTree tree, Resource resource, PermissionAction action)
+    private static RuleOutcome FirmPolicyFor(PrivilegeTree tree, Resource resource, PermissionAction action)
     {
-        bool? result = null;
+        var outcome = RuleOutcome.Absent;
         foreach (var rule in tree.FirmPolicy)
         {
             if (rule.ResourceType != resource.Type || rule.Action != action) continue;
-            if (!rule.Allow) return false;   // a deny on this plane is final for it
-            result = true;
+            if (!rule.Allow) return RuleOutcome.Deny;   // a deny on this plane is final for it
+            outcome = RuleOutcome.Allow;
         }
-        return result;
+        return outcome;
     }
 
-    /// <summary>Returns null when no override on this resource speaks to the question.</summary>
-    private static bool? OverrideFor(PrivilegeTree tree, Resource resource, PermissionAction action)
+    private static RuleOutcome OverrideFor(PrivilegeTree tree, Resource resource, PermissionAction action)
     {
-        bool? result = null;
+        var outcome = RuleOutcome.Absent;
         foreach (var rule in tree.Overrides)
         {
             if (rule.ResourceId != resource.Id || rule.Action != action) continue;
-            if (!rule.Allow) return false;
-            result = true;
+            if (!rule.Allow) return RuleOutcome.Deny;
+            outcome = RuleOutcome.Allow;
         }
-        return result;
+        return outcome;
     }
 }

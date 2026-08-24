@@ -4,9 +4,8 @@ using Collaborate.Authorization.Service;
 namespace Collaborate.Authorization.Api.Observability;
 
 /// <summary>
-/// One structured line per decision. `deciding_rule` is the field that matters: without it
-/// an auditor can see that access was denied but not on what basis, and a denial nobody can
-/// explain is indistinguishable from a bug.
+/// One line per decision. `deciding_rule` is the field that matters: without it a denial
+/// cannot be explained, and one that cannot be explained looks like a bug.
 /// </summary>
 public static class DecisionLog
 {

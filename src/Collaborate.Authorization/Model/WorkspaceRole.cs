@@ -1,9 +1,6 @@
 namespace Collaborate.Authorization.Model;
 
-/// <summary>
-/// Workspace-level role. Roles only ever grant. The absence of an action from a role is
-/// not a denial — it is the absence of a grant, which is a different decision.
-/// </summary>
+/// <summary>Roles only grant. An action missing from a role is no_grant, not a deny.</summary>
 public enum WorkspaceRole
 {
     Viewer,

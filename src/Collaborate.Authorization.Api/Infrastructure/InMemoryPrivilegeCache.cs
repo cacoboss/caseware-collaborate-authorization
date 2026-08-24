@@ -4,32 +4,19 @@ using Collaborate.Authorization.ReadPath;
 
 namespace Collaborate.Authorization.Api.Infrastructure;
 
-/// <summary>
-/// Stands in for Redis. Swapping this for a real Redis client changes nothing above it,
-/// which is the point of the interface.
-///
-/// <see cref="Fail"/> makes the cache unavailable. The behaviour that matters when it is
-/// set is that decisions stay correct — a cache outage costs latency, not correctness.
-/// </summary>
+/// <summary>Stands in for Redis. <see cref="Fail"/> simulates it being down.</summary>
 public sealed class InMemoryPrivilegeCache : IPrivilegeCache
 {
     private readonly ConcurrentDictionary<string, PrivilegeTree> _entries = new();
 
     public bool Fail { get; set; }
 
-    /// <summary>Counts loads served from here, so tests can prove a recompute happened.</summary>
-    public int Hits { get; private set; }
-
     public Task<PrivilegeTree?> GetAsync(string subjectId, string workspaceId, CancellationToken ct)
     {
         if (Fail) throw new InvalidOperationException("cache unavailable");
 
-        if (_entries.TryGetValue(Key(subjectId, workspaceId), out var tree))
-        {
-            Hits++;
-            return Task.FromResult<PrivilegeTree?>(tree);
-        }
-        return Task.FromResult<PrivilegeTree?>(null);
+        _entries.TryGetValue(Key(subjectId, workspaceId), out var tree);
+        return Task.FromResult(tree);
     }
 
     public Task SetAsync(PrivilegeTree tree, CancellationToken ct)
@@ -40,7 +27,7 @@ public sealed class InMemoryPrivilegeCache : IPrivilegeCache
         return Task.CompletedTask;
     }
 
-    /// <summary>What a bus consumer calls when a permission changes. The bus is out of scope.</summary>
+    /// <summary>What a bus consumer calls on a permission change. The bus is out of scope.</summary>
     public Task EvictAsync(string subjectId, string workspaceId, CancellationToken ct)
     {
         _entries.TryRemove(Key(subjectId, workspaceId), out _);

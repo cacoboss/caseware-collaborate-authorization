@@ -3,8 +3,8 @@ using Collaborate.Authorization.Model;
 namespace Collaborate.Authorization.ReadPath;
 
 /// <summary>
-/// The read-side copy. Never authoritative. <see cref="EvictAsync"/> is the contract a bus
-/// consumer would call when a permission changes; the bus itself is out of scope.
+/// Never authoritative. <see cref="EvictAsync"/> is what a bus consumer would call on a
+/// permission change; the bus is out of scope.
 /// </summary>
 public interface IPrivilegeCache
 {

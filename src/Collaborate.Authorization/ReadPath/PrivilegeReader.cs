@@ -3,15 +3,9 @@ using Collaborate.Authorization.Model;
 namespace Collaborate.Authorization.ReadPath;
 
 /// <summary>
-/// Reads the privilege tree, cache first, and degrades along two independent axes:
-/// whether the cache answered, and whether the source of truth is reachable.
-///
-/// With the database reachable, a present tree is served from the cache, an absent one is
-/// loaded and cached, and an unavailable cache costs a load on every call. With the
-/// database unreachable, a cached tree is still served and everything else fails closed.
-///
-/// That last distinction is the one worth stating: a cache outage with a healthy database
-/// costs latency, not correctness. Fail-closed is scoped to the source of truth.
+/// Cache first, source of truth second. The cache and the database fail independently;
+/// the six resulting cases are in Scope.md. Fail-closed applies to the source of truth
+/// only — a cache outage costs latency, not correctness.
 /// </summary>
 public sealed class PrivilegeReader(IPrivilegeStore store, IPrivilegeCache cache)
 {
@@ -24,12 +18,11 @@ public sealed class PrivilegeReader(IPrivilegeStore store, IPrivilegeCache cache
         }
         catch (Exception)
         {
-            // The cache is unavailable. Fall through to the source of truth: the answer is
-            // still correct, only slower.
+            // Cache is down. Fall through and load; the answer is still correct.
         }
 
         if (cached is not null)
-            return new PrivilegeLookup(cached, DecisionSource.Cache, SourceOfTruthUnavailable: false);
+            return new PrivilegeLookup(cached, DecisionSource.Cache);
 
         PrivilegeTree? loaded;
         try
@@ -38,7 +31,7 @@ public sealed class PrivilegeReader(IPrivilegeStore store, IPrivilegeCache cache
         }
         catch (Exception)
         {
-            return new PrivilegeLookup(null, DecisionSource.Database, SourceOfTruthUnavailable: true);
+            return new PrivilegeLookup(null, DecisionSource.Unavailable);
         }
 
         if (loaded is not null)
@@ -49,11 +42,10 @@ public sealed class PrivilegeReader(IPrivilegeStore store, IPrivilegeCache cache
             }
             catch (Exception)
             {
-                // Populating the cache failed. The decision we are about to return is still
-                // correct; the next request pays the same cost.
+                // Could not populate. This answer is fine; the next call pays the same cost.
             }
         }
 
-        return new PrivilegeLookup(loaded, DecisionSource.Database, SourceOfTruthUnavailable: false);
+        return new PrivilegeLookup(loaded, DecisionSource.Database);
     }
 }

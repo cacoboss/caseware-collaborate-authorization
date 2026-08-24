@@ -22,7 +22,7 @@ carries two deliberate deviations from the OAuth2/OIDC specification. Three page
 | **Read this** | [`Part 1 - Architecture and Design Ciro Cobos.pdf`](docs/design-docs/Part%201%20-%20Architecture%20and%20Design%20Ciro%20Cobos.pdf) |
 | Source | [`Identity and Authorization Design.md`](docs/design-docs/Identity%20and%20Authorization%20Design.md) |
 | Intermediate | [`Identity and Authorization Design.docx`](docs/design-docs/Identity%20and%20Authorization%20Design.docx) — used to produce the PDF |
-| Submitted archive | [`Part 1 - Architecture and Desing Ciro Cobos.zip`](docs/design-docs/Part%201%20-%20Architecture%20and%20Desing%20Ciro%20Cobos.zip) |
+| Submitted archive | [`Part 1 - Architecture and Design Ciro Cobos.zip`](docs/design-docs/Part%201%20-%20Architecture%20and%20Design%20Ciro%20Cobos.zip) |
 
 The Markdown file is the source of truth; the PDF is exported from it and is the copy to
 read if your viewer does not render Markdown tables well.

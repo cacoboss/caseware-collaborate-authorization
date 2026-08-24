@@ -2,7 +2,6 @@ using Collaborate.Authorization.Model;
 
 namespace Collaborate.Authorization.Resolution;
 
-/// <summary>Which actions each workspace role grants.</summary>
 public static class RoleGrants
 {
     public static bool Grants(WorkspaceRole role, PermissionAction action) => role switch

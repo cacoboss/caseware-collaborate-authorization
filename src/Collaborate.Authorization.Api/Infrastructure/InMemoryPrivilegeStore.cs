@@ -5,11 +5,8 @@ using Collaborate.Authorization.ReadPath;
 namespace Collaborate.Authorization.Api.Infrastructure;
 
 /// <summary>
-/// Stands in for the permissions database. The brief puts the real store out of scope, and
-/// nothing about the read path's correctness depends on which component wrote a row.
-///
-/// <see cref="Fail"/> makes the source of truth unreachable, which is how the fail-closed
-/// path is exercised. Turning a real database off mid-test is fiddly; a flag is not.
+/// Stands in for the permissions database. <see cref="Fail"/> simulates it being
+/// unreachable, which is how the fail-closed path is exercised.
 /// </summary>
 public sealed class InMemoryPrivilegeStore : IPrivilegeStore
 {

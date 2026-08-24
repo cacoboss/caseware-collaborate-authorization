@@ -4,10 +4,8 @@ using System.Text.Json;
 namespace Collaborate.Authorization.Api.Authentication;
 
 /// <summary>
-/// Who the decision is about, and who asked. The subject always comes from the token's
-/// `sub`; there is no way for a caller to name a different one. Where the token carries
-/// `act`, that actor is recorded for attribution and takes no part in the decision — which
-/// is what keeps a delegated call from becoming a confused deputy.
+/// The subject always comes from the token's `sub`; a caller cannot name a different one.
+/// `act` is recorded for attribution and takes no part in the decision.
 /// </summary>
 public sealed record Caller(string Subject, string? Actor)
 {

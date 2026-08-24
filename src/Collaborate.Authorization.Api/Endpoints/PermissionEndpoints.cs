@@ -7,10 +7,6 @@ using Collaborate.Authorization.Service;
 
 namespace Collaborate.Authorization.Api.Endpoints;
 
-/// <summary>
-/// The two query shapes the decision point exposes. Both answer for the token's subject
-/// and both carry the rule that produced the answer.
-/// </summary>
 public static class PermissionEndpoints
 {
     public static void MapPermissionEndpoints(this WebApplication app)
@@ -19,10 +15,7 @@ public static class PermissionEndpoints
         app.MapGet("/workspaces/{workspaceId}/permissions/check", Check).RequireAuthorization();
     }
 
-    /// <summary>
-    /// Reports everything the caller may do in a workspace. This is the shape a downstream
-    /// service calls when it does not want to compute authorization itself.
-    /// </summary>
+    /// <summary>What a service calls when it does not want to compute authorization itself.</summary>
     private static async Task<IResult> Enumerate(
         string workspaceId,
         ClaimsPrincipal principal,
@@ -49,10 +42,7 @@ public static class PermissionEndpoints
         return Results.Ok(new { workspaceId, subject = caller.Subject, permissions = result.Permissions });
     }
 
-    /// <summary>
-    /// Answers one question about one resource. This is the shape the enforcement point
-    /// calls per request, and the one the decision-latency target measures.
-    /// </summary>
+    /// <summary>What the enforcement point calls per request. This is the 10 ms path.</summary>
     private static async Task<IResult> Check(
         string workspaceId,
         string resourceId,
