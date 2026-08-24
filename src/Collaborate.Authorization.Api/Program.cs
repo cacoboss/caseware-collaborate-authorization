@@ -7,6 +7,7 @@ using Collaborate.Authorization.Resolution;
 using Collaborate.Authorization.Service;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,9 +45,20 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 // Registered by concrete type as well, so tests can make either one fail.
 builder.Services.AddSingleton<InMemoryPrivilegeStore>();
-builder.Services.AddSingleton<InMemoryPrivilegeCache>();
 builder.Services.AddSingleton<IPrivilegeStore>(sp => sp.GetRequiredService<InMemoryPrivilegeStore>());
-builder.Services.AddSingleton<IPrivilegeCache>(sp => sp.GetRequiredService<InMemoryPrivilegeCache>());
+
+// Redis when configured, in-memory otherwise. Nothing above the interface changes.
+var redisConnection = builder.Configuration["Redis:ConnectionString"];
+if (string.IsNullOrWhiteSpace(redisConnection))
+{
+    builder.Services.AddSingleton<InMemoryPrivilegeCache>();
+    builder.Services.AddSingleton<IPrivilegeCache>(sp => sp.GetRequiredService<InMemoryPrivilegeCache>());
+}
+else
+{
+    builder.Services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisConnection));
+    builder.Services.AddSingleton<IPrivilegeCache, RedisPrivilegeCache>();
+}
 
 builder.Services.AddSingleton<IPermissionResolver, PermissionResolver>();
 builder.Services.AddSingleton<PrivilegeReader>();
