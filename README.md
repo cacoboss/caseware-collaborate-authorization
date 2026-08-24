@@ -13,25 +13,28 @@ lets a revocation take effect while an issued token is still valid.
 
 ## Part 1 — Design document
 
-The main deliverable.
+The main deliverable. Five sections: High-Level Architecture, Implementation Plan, Testing
+Strategy, Evaluation & Observability, and Failure Modes & Tradeoffs — the last of which also
+carries two deliberate deviations from the OAuth2/OIDC specification. Three pages.
 
-| Format | Path |
+| | File |
 |---|---|
-| Markdown | [`docs/design-docs/Identity and Authorization Design.md`](docs/design-docs/Identity%20and%20Authorization%20Design.md) |
-| PDF | [`docs/design-docs/Identity and Authorization Design.pdf`](docs/design-docs/Identity%20and%20Authorization%20Design.pdf) |
+| **Read this** | [`Part 1 - Architecture and Design Ciro Cobos.pdf`](docs/design-docs/Part%201%20-%20Architecture%20and%20Design%20Ciro%20Cobos.pdf) |
+| Source | [`Identity and Authorization Design.md`](docs/design-docs/Identity%20and%20Authorization%20Design.md) |
+| Intermediate | [`Identity and Authorization Design.docx`](docs/design-docs/Identity%20and%20Authorization%20Design.docx) — used to produce the PDF |
+| Submitted archive | [`Part 1 - Architecture and Desing Ciro Cobos.zip`](docs/design-docs/Part%201%20-%20Architecture%20and%20Desing%20Ciro%20Cobos.zip) |
 
-The Markdown file is the source; the PDF is exported from it and is the copy to read if
-your viewer does not render Markdown tables well. Both are three pages and cover the five
-required sections: High-Level Architecture, Implementation Plan, Testing Strategy,
-Evaluation & Observability, and Failure Modes & Tradeoffs — the last of which also carries
-two deliberate deviations from the OAuth2/OIDC specification.
+The Markdown file is the source of truth; the PDF is exported from it and is the copy to
+read if your viewer does not render Markdown tables well.
 
-### Diagrams
+### Diagram
 
 The solution diagram above is exported from Mermaid source kept in the same folder:
 
-- [`01-architecture-v2-vertical.md`](docs/design-docs/01-architecture-v2-vertical.md) — current, the source of `Solution Diagram.png`
-- [`01-architecture-v1-horizontal.md`](docs/design-docs/01-architecture-v1-horizontal.md) — superseded, kept for reference
+| | File |
+|---|---|
+| Current — source of `Solution Diagram.png` | [`01-architecture-v2-vertical.md`](docs/design-docs/01-architecture-v2-vertical.md) |
+| Superseded, kept for reference | [`01-architecture-v1-horizontal.md`](docs/design-docs/01-architecture-v1-horizontal.md) |
 
 ---
 
@@ -41,19 +44,40 @@ The solution diagram above is exported from Mermaid source kept in the same fold
 by another service that would otherwise have to compute authorization itself. It implements
 Sync-API, the decision point.
 
-Scope, use cases, the risks the tests retire, what is deliberately left unbuilt, and the
-justification for resolving authorization by hand rather than through ASP.NET Core's
-authorization framework are all in [`docs/code-docs/Scope.md`](docs/code-docs/Scope.md).
-Every item there traces back to a line in the design document.
+### Scope
+
+Everything about what this slice covers lives in
+**[`docs/code-docs/Scope.md`](docs/code-docs/Scope.md)**, not in this file. Read it before
+the code — it is where the choices are argued, and every item in it traces back to a line in
+the design document. It covers:
+
+| Section | What it answers |
+|---|---|
+| Use cases | The ten behaviours that make the endpoint correct, and the failure matrix the read path degrades through |
+| Risks retired | The eight risks the tests exist to catch, each with the test that catches it |
+| Deliberately not built | What was left out and why — the bus, the write path, single-flight, paging |
+| Decisions taken | Enumeration over batch, `act` consumed but not minted, real JWTs, `no_grant` |
+| **Framework or custom** | Why token validation is the framework's job and authorization resolution is not |
+
+### Layout
 
 ```
 src/Collaborate.Authorization       the resolver and the read path — no ASP.NET dependency
+  Model/        the vocabulary: actions, roles, resources, the privilege tree
+  Resolution/   precedence across the three planes, and the rule that decided
+  ReadPath/     cache first, source of truth second, and how it degrades
+  Service/      the two query shapes over one resolution
+
 src/Collaborate.Authorization.Api   minimal API, JWT bearer, decision log
+  Endpoints/ · Authentication/ · Observability/ · Infrastructure/
+
 tests/                              27 tests
 ```
 
-The project boundary is the argument: if the resolver needed the framework to compile, the
-claim that authorization logic lives outside it would be false.
+The namespace graph is acyclic — `Model` depends on nothing, `Resolution` and `ReadPath`
+depend only on `Model`, `Service` on all three — so the structure is enforced by the
+compiler rather than by convention. And if the resolver ever needed ASP.NET Core to compile,
+the claim that authorization logic lives outside the framework would be false.
 
 ### Running it
 
@@ -80,7 +104,8 @@ Run the service:
 dotnet run --project src/Collaborate.Authorization.Api
 ```
 
-Both endpoints require a bearer token. Every response carries the rule that decided it:
+Both endpoints require a bearer token and answer for that token's subject. Every response
+carries the rule that decided it:
 
 ```
 GET /workspaces/{workspaceId}/permissions
@@ -94,8 +119,10 @@ GET /workspaces/{workspaceId}/permissions/check?resourceId={id}&action={View|Com
 Two logs, kept separate because the design work and the implementation work were done in
 different modes.
 
-- [`docs/design-docs/AI Usage Log.md`](docs/design-docs/AI%20Usage%20Log.md) — Part 1, including answers to the four follow-up questions
-- [`docs/code-docs/AI Usage Log - Part 2.md`](docs/code-docs/AI%20Usage%20Log%20-%20Part%202.md) — Part 2, in progress
+| | File |
+|---|---|
+| Part 1, including answers to the four follow-up questions | [`AI Usage Log.pdf`](docs/design-docs/AI%20Usage%20Log.pdf) · [`.md`](docs/design-docs/AI%20Usage%20Log.md) · [`.docx`](docs/design-docs/AI%20Usage%20Log.docx) |
+| Part 2, the implementation slice | [`AI Usage Log - Part 2.md`](docs/code-docs/AI%20Usage%20Log%20-%20Part%202.md) |
 
 ---
 
@@ -103,8 +130,8 @@ different modes.
 
 ```
 docs/
-  design-docs/   design document, diagrams, Part 1 AI log
-  code-docs/     slice scope, decisions, Part 2 AI log
+  design-docs/   design document, diagram, Part 1 AI log
+  code-docs/     slice scope, Part 2 AI log
 src/             implementation
 tests/           tests
 ```
