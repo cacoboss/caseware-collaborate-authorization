@@ -94,6 +94,7 @@ Each is declared in the design document. None is invented here.
 | **One subject's resource override is read into another subject's tree** | The override plane is keyed by (resource, subject); a missing filter hands one user another user's access | Seed an override for a different subject, assert this subject's tree has none |
 | **A resource from another workspace appears in the tree** | Enumeration walks the tree's resources, so a stray row widens what a caller is told they may touch | Seed a resource in a second workspace, assert it is absent |
 | **One firm's policy applies inside another firm's workspace** | Firm policy is the plane that denies across a firm; the wrong join makes it cross-tenant | Seed a policy for a second firm, assert this workspace's tree has none |
+| **The cache does not actually keep requests off the database** | The read path exists for this, and `source: cache` is a label the code writes about itself rather than evidence | Count trips to the source of truth: a hundred checks make one, and eviction costs exactly one more |
 
 The second is the one that matters most. Revoking a permission in the store and getting a
 deny **on the same, still-valid token** is the whole design demonstrated in one test: it is
@@ -111,6 +112,7 @@ what "revocation within seconds without forcing re-authentication" means in prac
 | A real identity provider | Out of scope per the brief. A test signing key stands in |
 | Single-flight on cache miss | A mitigation in the failure-modes table, not a correctness property of this endpoint. Testing it needs concurrency scaffolding that buys little here |
 | Enumeration paging | The tree is scoped to one workspace, which bounds it. Paging becomes real at tenant sizes this slice does not simulate |
+| Load and throughput testing | The design document's testing strategy covers the whole system and includes a stress run measuring revocation lag at the target check rate. This slice does not implement it. Numbers produced against in-memory stand-ins on a developer machine would not describe production, and a target nobody can defend is worse than no target. What the slice does assert is the mechanism any such target depends on: that a warm cache makes exactly one trip to the source of truth |
 
 ---
 

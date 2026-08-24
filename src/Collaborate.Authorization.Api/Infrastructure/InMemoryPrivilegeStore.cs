@@ -14,6 +14,9 @@ public sealed class InMemoryPrivilegeStore : IPrivilegeStore
 
     public bool Fail { get; set; }
 
+    /// <summary>Trips to the source of truth. The cache exists to keep this near one.</summary>
+    public int Loads { get; private set; }
+
     public void Seed(PrivilegeTree tree) => _trees[Key(tree.SubjectId, tree.WorkspaceId)] = tree;
 
     /// <summary>Applies a permission change. In production this is the Auth-API's job.</summary>
@@ -23,6 +26,7 @@ public sealed class InMemoryPrivilegeStore : IPrivilegeStore
     {
         if (Fail) throw new InvalidOperationException("source of truth unreachable");
 
+        Loads++;
         _trees.TryGetValue(Key(subjectId, workspaceId), out var tree);
         return Task.FromResult(tree);
     }

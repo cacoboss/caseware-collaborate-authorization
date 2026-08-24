@@ -28,7 +28,7 @@ public class RedisPrivilegeCacheTests
 
     internal static async Task<(RedisContainer Container, RedisPrivilegeCache Cache)> StartRedis()
     {
-        var container = new RedisBuilder().WithImage("redis:7-alpine").Build();
+        var container = new RedisBuilder("redis:7-alpine").Build();
         await container.StartAsync();
 
         // The server is reachable but has just come up. Retry rather than abort on the

@@ -74,7 +74,7 @@ src/Collaborate.Authorization.Api   minimal API, JWT bearer, decision log
                                     dependency plus the schema: in-memory by default,
                                     PostgreSQL and Redis when configured
 
-tests/                              37 tests
+tests/                              39 tests
 ```
 
 The namespace graph is acyclic — `Model` depends on nothing, `Resolution` and `ReadPath`
@@ -96,9 +96,9 @@ Run the tests:
 dotnet run --project tests/Collaborate.Authorization.Tests
 ```
 
-**Ten of the 37 tests need Docker.** They start PostgreSQL and Redis containers to prove
+**Ten of the 39 tests need Docker.** They start PostgreSQL and Redis containers to prove
 that the privilege tree is a projection of a real schema and that it survives a round trip
-through a real cache. Without Docker running those ten fail; the other 27 do not need it and
+through a real cache. Without Docker running those ten fail; the other 29 do not need it and
 cover every behaviour of the read path using fakes.
 
 `dotnet test` does not work here. TUnit runs on Microsoft.Testing.Platform, and the .NET 10

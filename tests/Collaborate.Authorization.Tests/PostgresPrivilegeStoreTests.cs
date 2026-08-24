@@ -21,7 +21,7 @@ public class PostgresPrivilegeStoreTests
 
     private static async Task<(PostgreSqlContainer Container, PostgresPrivilegeStore Store)> StartDatabase()
     {
-        var container = new PostgreSqlBuilder().WithImage("postgres:16-alpine").Build();
+        var container = new PostgreSqlBuilder("postgres:16-alpine").Build();
         await container.StartAsync();
 
         await Execute(container, PrivilegeSchema.Sql);

@@ -167,6 +167,37 @@ public class ReadPathTests
         await Assert.That(after.Source).IsEqualTo(DecisionSource.Cache);
     }
 
+    // ------------------------------------------------ what the cache is for
+
+    [Test]
+    public async Task A_hundred_checks_make_one_trip_to_the_source_of_truth()
+    {
+        var (service, store, _) = Build();
+
+        for (var i = 0; i < 100; i++)
+            await Check(service);
+
+        await Assert.That(store.Loads)
+            .IsEqualTo(1)
+            .Because("the whole read path exists so that repeated checks do not reach the database");
+    }
+
+    [Test]
+    public async Task Eviction_costs_exactly_one_more_trip()
+    {
+        var (service, store, cache) = Build();
+
+        await Check(service);
+        await Check(service);
+        await cache.EvictAsync(Subject, Workspace, CancellationToken.None);
+        await Check(service);
+        await Check(service);
+
+        await Assert.That(store.Loads)
+            .IsEqualTo(2)
+            .Because("invalidation is what sends a request back to the source of truth, and nothing else does");
+    }
+
     // ---------------------------------------------------- shape agreement
 
     [Test]
