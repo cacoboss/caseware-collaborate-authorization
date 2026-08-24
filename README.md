@@ -57,7 +57,7 @@ the design document. It covers:
 | Risks retired | The eight risks the tests exist to catch, each with the test that catches it |
 | Deliberately not built | What was left out and why — the bus, the write path, single-flight, paging |
 | Decisions taken | Enumeration over batch, `act` consumed but not minted, real JWTs, `no_grant` |
-| **Framework or custom** | Why token validation is the framework's job and authorization resolution is not |
+| **Framework or custom** | Why token validation is the framework's job, why authorization resolution is not, and why ASP.NET Core Identity is not in here at all |
 
 ### Layout
 

@@ -160,6 +160,36 @@ To be accurate about what is *not* a reason: deny-overrides is expressible in th
 win. The problem is never that the framework cannot say no — it is that it cannot say why, to
 whom, or in what order.
 
+### Why not ASP.NET Core Identity
+
+ASP.NET Core Identity is a membership system — user records, password hashing, lockout,
+two-factor, and the EF Core schema behind them. It is a different product from the
+authentication and authorization framework discussed above, and it is worth saying
+separately why it is not here.
+
+**It builds the component the brief takes off the table.** The brief puts the identity
+provider out of scope by name, credential storage and MFA included, and says to assume the
+authorization layer is built around it. Identity *is* that provider. Adopting it would mean
+building the one thing the exercise says not to build.
+
+**It would be a second user store.** Caseware's central identity provider already issues
+identity tokens, and some firms federate their own. Identity assumes it owns the user table.
+Standing one up next to those creates exactly the account-linking problem that Assumption 2
+removes from this design by declaring one address, one identity, one population.
+
+**Its authorization model is membership, not policy.** Identity answers *is this user in
+role X* and *does this user hold claim Y*. This design has three planes that can contradict
+each other and a precedence rule between them, and a resource-level override is a statement
+about a (subject, resource) pair rather than about the subject. `IdentityUserRole` and
+`IdentityUserClaim` have nowhere to put that, and no combining semantics to resolve it if
+they did.
+
+What stands in its place: the central identity provider issues the token, `JwtBearer`
+validates it, and this service resolves fine-grained access per request. In production the
+provider's seat is filled by an OIDC server — Duende IdentityServer, Keycloak, Entra ID.
+This service is not one of those and does not try to be. It is the decision point that sits
+behind one.
+
 ### What that buys
 
 The resolver is a pure function from a privilege tree, a resource and an action to a decision
