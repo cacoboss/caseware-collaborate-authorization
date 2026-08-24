@@ -98,6 +98,9 @@ public class ReadPathTests
         await Assert.That(decision.DecidingRule)
             .IsEqualTo(DecidingRule.SourceUnavailable)
             .Because("the response has to say we could not check, not that policy denied");
+        await Assert.That(decision.Source)
+            .IsEqualTo(DecisionSource.Unavailable)
+            .Because("nothing was read, so the decision must not claim a source");
     }
 
     [Test]
