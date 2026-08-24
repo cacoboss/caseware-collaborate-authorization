@@ -1,4 +1,5 @@
-using Collaborate.Authorization;
+using Collaborate.Authorization.Model;
+using Collaborate.Authorization.Resolution;
 
 namespace Collaborate.Authorization.Tests;
 

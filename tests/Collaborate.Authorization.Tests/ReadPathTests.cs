@@ -1,5 +1,8 @@
-using Collaborate.Authorization;
 using Collaborate.Authorization.Api.Infrastructure;
+using Collaborate.Authorization.Model;
+using Collaborate.Authorization.Resolution;
+using Collaborate.Authorization.ReadPath;
+using Collaborate.Authorization.Service;
 
 namespace Collaborate.Authorization.Tests;
 

@@ -1,21 +1,8 @@
-namespace Collaborate.Authorization;
+using Collaborate.Authorization.Model;
+using Collaborate.Authorization.Resolution;
+using Collaborate.Authorization.ReadPath;
 
-/// <summary>
-/// The result of an enumeration. <paramref name="SourceAvailable"/> is false when the tree
-/// could not be read at all, which is a different answer from an empty set of permissions.
-/// </summary>
-public sealed record EnumerationResult(bool SourceAvailable, IReadOnlyList<AuthorizationDecision> Permissions)
-{
-    public static readonly EnumerationResult Unavailable = new(false, []);
-}
-
-/// <summary>One answer, and everything an audit needs to explain it.</summary>
-public sealed record AuthorizationDecision(
-    string ResourceId,
-    PermissionAction Action,
-    bool Allowed,
-    DecidingRule DecidingRule,
-    DecisionSource Source);
+namespace Collaborate.Authorization.Service;
 
 /// <summary>
 /// The decision point. Both query shapes run through the same resolution, which is what

@@ -4,12 +4,14 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Collaborate.Authorization;
 using Collaborate.Authorization.Api.Infrastructure;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
+using Collaborate.Authorization.Model;
+using Collaborate.Authorization.Resolution;
+using Collaborate.Authorization.Service;
 
 namespace Collaborate.Authorization.Tests;
 
@@ -146,7 +148,7 @@ public class DecisionEndpointTests
         var permissions = payload.GetProperty("permissions").EnumerateArray().ToList();
 
         await Assert.That(response.StatusCode).IsEqualTo(HttpStatusCode.OK);
-        await Assert.That(permissions).HasCount().EqualTo(1);
+        await Assert.That(permissions).Count().IsEqualTo(1);
         await Assert.That(permissions[0].GetProperty("action").GetString()).IsEqualTo(nameof(PermissionAction.View));
         await Assert.That(permissions[0].GetProperty("decidingRule").GetString()).IsEqualTo(nameof(DecidingRule.WorkspaceRole));
     }
