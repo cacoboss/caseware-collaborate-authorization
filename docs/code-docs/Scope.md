@@ -79,9 +79,9 @@ Each is declared in the design document. None is invented here.
 |---|---|---|
 | An explicit resource-level deny is masked by an inherited workspace allow | S2 phase 1 · S3 | Table-driven over every (firm policy × workspace role × resource override) combination — TUnit |
 | The decision is derived from the token instead of resolved per request | Key Decision 1 | Revoke in the store, call again with the **same token**, assert deny |
-| The endpoint authorizes against the caller instead of the delegating user | Key Decision 6 · S3 | A request naming a subject other than the token's `sub` is refused |
+| The endpoint authorizes against the caller instead of the delegating user | Key Decision 6 · S3 | A token whose `sub` is a restricted user and whose `act` is a service with wider rights must be denied. There is no subject parameter to abuse — the subject only ever comes from the token — so the real confused deputy is authorizing the actor |
 | A source-of-truth failure produces an allow | Key Decision 2 · S5 | Database unreachable with a cold cache: assert deny, and that the response names the cause |
-| **A cache failure produces a denial instead of a slower correct answer** | S5, *Cache unavailable* | Redis stopped, database healthy: assert the same decisions as with the cache warm |
+| **A cache failure produces a denial instead of a slower correct answer** | S5, *Cache unavailable* | Cache failing, database healthy: assert the same decisions as with the cache warm |
 | A stale tree is served after invalidation | S5 | Evict, call again, assert the answer was recomputed |
 | **The point query and the enumeration disagree** | §1 use case 7 | For every resource in an enumeration, the point query returns the same decision and rule |
 | A decision arrives without an explanation | Key Decision 5 | `deciding_rule` present on every entry; `no_grant` where nothing granted |
@@ -112,5 +112,59 @@ what "revocation within seconds without forcing re-authentication" means in prac
 | Response shape | Enumeration **and** point query over one resolver | The design implies both: the PEP asks a point question per request, a consuming service wants the set. Two shapes, one resolution path — breadth in the contract, not in the logic |
 | `act` claim | Consumed, not minted | Backs the confused-deputy row with code. Reading a claim and refusing to authorize on it is not RFC 8693 mechanics |
 | Token | Real JWT, validated by the framework with a symmetric test key | The brief asks whether the right tool was reached for; token validation is exactly what the framework already solves |
-| Store | Real Redis and a real database through TestContainers | `source: cache`, the cache-outage row and both halves of Key Decision 2 are untestable against a single in-memory store |
+| Store | Two in-memory implementations behind separate `IPrivilegeStore` and `IPrivilegeCache` interfaces, each able to be told to fail | A single store cannot distinguish cache from source of truth; two can. Real containers prove wiring, fakes prove behaviour, and all six degradation cells are behaviour. Turning a real Redis off mid-test is fiddly; a flag is not. A Redis-backed cache is a wiring test to add if time allows |
 | Empty result | `no_grant` | A denial with no grant behind it is still a decision, and explainability has to cover it |
+
+---
+
+## 5. Framework or custom
+
+The brief asks whether the right tool was reached for, and says the justification matters as
+much as the code. The line we drew: **authentication is the framework's, authorization
+resolution is ours.**
+
+### Used from the framework
+
+`Microsoft.AspNetCore.Authentication.JwtBearer` does token parsing, signature verification,
+issuer, audience and lifetime validation, and clock skew. Hand-rolling any of it is the
+failure the brief names by example. Routing, dependency injection, model binding, JSON
+serialization and logging are all stock. No third-party library was added — no MediatR, no
+AutoMapper, no FluentValidation, no ORM. For two endpoints over a pure resolver, each of
+those would be scaffolding with a maintenance cost and no reader.
+
+### Written by hand, and why
+
+ASP.NET Core's authorization framework is built to answer *may this request proceed*. This
+service answers *what may this subject do, and on what basis*. Three concrete gaps, none of
+which is about the framework being unable to deny:
+
+**It cannot explain a decision.** `IAuthorizationService` returns success or failure.
+`AuthorizationFailureReason` exists only on the failure path, so an allow carries no
+explanation at all. Key Decision 5 requires every decision to name the plane that produced
+it — allows included — because in an audit product a decision nobody can account for is
+indistinguishable from a bug. There is no extension point that returns *why* on success.
+
+**It cannot enumerate.** The framework evaluates a policy against one resource in one
+request. Slice B's contract is to report the whole set a subject may act on, so a downstream
+service does not have to compute it. That shape has no representation in the authorization
+pipeline; building it on top would mean calling the pipeline once per resource per action and
+discarding the reasons, which is slower and still unexplainable.
+
+**Handler order is not guaranteed.** When firm policy and a resource override both deny, this
+service reports firm policy, because a workspace administrator cannot lift a firm-level
+prohibition and that is the more authoritative explanation for an audit. Requirement handlers
+run in no defined order, so which reason surfaced would be incidental.
+
+To be accurate about what is *not* a reason: deny-overrides is expressible in the framework.
+`AuthorizationHandlerContext.Fail` beats any `Succeed`, so an explicit deny could be made to
+win. The problem is never that the framework cannot say no — it is that it cannot say why, to
+whom, or in what order.
+
+### What that buys
+
+The resolver is a pure function from a privilege tree, a resource and an action to a decision
+and its rule. It has no dependency on ASP.NET Core, no HTTP context, and no DI container,
+which is why the precedence matrix is exercised as a table with no host running. The project
+boundary between `Collaborate.Authorization` and `Collaborate.Authorization.Api` is that
+argument made structural: if the resolver ever needed the framework to compile, the claim
+would be false.

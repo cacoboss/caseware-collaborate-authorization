@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Collaborate.Authorization.Api/Collaborate.Authorization.Api.csproj" />
+    <Project Path="src/Collaborate.Authorization/Collaborate.Authorization.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Collaborate.Authorization.Tests/Collaborate.Authorization.Tests.csproj" />
+  </Folder>
+</Solution>

@@ -25,3 +25,6 @@ docs/design-docs/AI Usage Log - full working record.md
 
 # Word lock files
 ~\$*
+
+# Test run artefacts
+TestResults/

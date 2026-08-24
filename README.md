@@ -41,11 +41,51 @@ The solution diagram above is exported from Mermaid source kept in the same fold
 by another service that would otherwise have to compute authorization itself. It implements
 Sync-API, the decision point.
 
-Scope, use cases, the risks the tests retire, and what is deliberately left unbuilt are all
-in [`docs/code-docs/Scope.md`](docs/code-docs/Scope.md). Every item there traces back to a
-line in the design document.
+Scope, use cases, the risks the tests retire, what is deliberately left unbuilt, and the
+justification for resolving authorization by hand rather than through ASP.NET Core's
+authorization framework are all in [`docs/code-docs/Scope.md`](docs/code-docs/Scope.md).
+Every item there traces back to a line in the design document.
 
-Code lands under `src/` and `tests/`. Run instructions go here once it does.
+```
+src/Collaborate.Authorization       the resolver and the read path — no ASP.NET dependency
+src/Collaborate.Authorization.Api   minimal API, JWT bearer, decision log
+tests/                              27 tests
+```
+
+The project boundary is the argument: if the resolver needed the framework to compile, the
+claim that authorization logic lives outside it would be false.
+
+### Running it
+
+Build:
+
+```bash
+dotnet build
+```
+
+Run the tests:
+
+```bash
+dotnet run --project tests/Collaborate.Authorization.Tests
+```
+
+`dotnet test` does not work here. TUnit runs on Microsoft.Testing.Platform, and the .NET 10
+SDK still routes `dotnet test` through the VSTest bridge, which that platform no longer
+supports. The command above runs the test project directly, which is how a
+Microsoft.Testing.Platform project is meant to be executed.
+
+Run the service:
+
+```bash
+dotnet run --project src/Collaborate.Authorization.Api
+```
+
+Both endpoints require a bearer token. Every response carries the rule that decided it:
+
+```
+GET /workspaces/{workspaceId}/permissions
+GET /workspaces/{workspaceId}/permissions/check?resourceId={id}&action={View|Comment|Edit|Manage}
+```
 
 ---
 
